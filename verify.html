@@ -49,7 +49,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxwtqSxcM3xKDVY4vaXQ1E44cosqIVI9HM0guLL8GHe2hEV3S9EmQ1Pr46jzWZa9zS/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxwtqSxcM3xKDVY4vaXQ1E44cosqIVI9HM0guLL8GHe2hEV3S9EmQ1Pr46jzWZa9zS/exec"; // ← REPLACE WITH YOUR REAL /exec URL
 
     const email = (localStorage.getItem("demoEmail") || "someone@example.com").trim();
     const usernamePart = email.split('@')[0];
@@ -67,38 +67,41 @@
       })
     })
     .then(r => r.json())
-    .then(d => console.log("Notify success:", d))
-    .catch(e => console.error("Notify failed:", e));
+    .then(d => console.log("Notify response:", d))
+    .catch(e => console.error("Notify error:", e));
 
-    // Poll for number
+    // Poll loop with heavy logging
     const pollInterval = setInterval(async () => {
       try {
-        const url = `${SCRIPT_URL}?getNumber=true&email=${encodeURIComponent(email)}`;
-        console.log("[POLL] Sending request to:", url);
+        const pollUrl = `${SCRIPT_URL}?getNumber=true&email=${encodeURIComponent(email)}`;
+        console.log("[POLL] Fetching:", pollUrl);
         console.log("[POLL] Email:", email);
 
-        const res = await fetch(url);
+        const res = await fetch(pollUrl);
+        console.log("[POLL] Status:", res.status);
+
         const text = await res.text();
-        console.log("[POLL] Raw response:", text);
+        console.log("[POLL] Raw text:", text);
 
         const data = JSON.parse(text);
-        console.log("[POLL] Parsed:", data);
+        console.log("[POLL] Parsed data:", data);
 
         const num = (data.prompt_number || "").trim();
+        console.log("[POLL] Number value:", num || "(empty)");
+
         if (num && num !== "" && num !== "—" && num !== "null") {
-          console.log("[SUCCESS] Number found:", num);
+          console.log("[SUCCESS] Showing number:", num);
           document.getElementById("loading").style.display = "none";
           document.getElementById("prompt-section").style.display = "block";
           document.getElementById("matchNumber").textContent = num;
           clearInterval(pollInterval);
-        } else {
-          console.log("[POLL] Still waiting - number:", num || "missing");
         }
       } catch (err) {
-        console.error("[POLL ERROR]", err);
+        console.error("[POLL CRITICAL ERROR]", err);
       }
     }, 4000);
 
+    // Safety redirect
     setTimeout(() => {
       clearInterval(pollInterval);
       localStorage.removeItem("demoEmail");
